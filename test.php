@@ -1,40 +1,27 @@
 <?php
 
-// Задача: имеем свя́зный список, который реализуется через класс Node
+// Алгоритм быстрой сортировки (опорный элемент $pivot является первым из массива $arr)
+// В стандартной реализации опорный элемент является средним из массива $arr
+// Скорость O(n*log n)
 
-
-class Node
+function quicksort($arr)
 {
-    public $data, $next;
-
-    public function __construct($data, $next = null)
-    {
-        $this->data = $data;
-        $this->next = $next;
+    if (count($arr) < 2) {
+        return $arr;
+    } else {
+        $pivot = $arr[0];
+        $less = [];
+        $greater = [];
+        for ($i = 1; $i < count($arr); $i++) {
+            if ($arr[$i] <= $pivot) {
+                array_push($less, $arr[$i]);
+            }
+            if ($arr[$i] > $pivot) {
+                array_push($greater, $arr[$i]);
+            }
+        }
+        return array_merge(quicksort($less), [$pivot], quicksort($greater));
     }
 }
 
-// Требуется написать алгоритм, который будет "разворачивать" связи
-// в связном списке и вернёт первый элемент этого списка
-
-
-$ari = new Node('Ari');
-$pete = new Node('Pete', $ari);
-$steave = new Node('Steave', $pete);
-$bob = new Node('Bob', $steave);
-
-print_r($bob);
-
-function turnNode($elNode)
-{
-    if (is_object($elNode->next)) {
-        turnNode($elNode->next);
-        $elNode->next->next = $elNode;
-        $elNode->next = null;
-    }
-}
-
-
-turnNode($bob);
-
-print_r($ari);
+print_r(quicksort([1, 5, 6, 2, 53, 20, 9, 291, 214, 21, 204, 24, 54, 94, 2303, 4523, 9288, 12, 942, 23]));

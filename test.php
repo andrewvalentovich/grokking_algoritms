@@ -1,30 +1,40 @@
 <?php
 
-function binary_search($list, $item)
+// Задача: имеем свя́зный список, который реализуется через класс Node
+
+
+class Node
 {
-    $low = 0;
-    $high = count($list) - 1;
+    public $data, $next;
 
-    while ($low <= $high) {
-        $mid = floor(($low + $high)/2);
-        $guess = $list[$mid];
-
-        if ($guess === $item) { // Если средний элемент массива есть искомое значение, то возвращаем его индекс
-            return $mid;
-        }
-
-        if ($guess > $item) {
-            $high = $mid - 1;
-        }
-
-        else {
-            $low = $mid + 1;
-        }
-        
+    public function __construct($data, $next = null)
+    {
+        $this->data = $data;
+        $this->next = $next;
     }
-
-    return 0;
 }
 
-$my_list = [1, 3, 5, 7, 9];
-print_r(binary_search($my_list, 7));
+// Требуется написать алгоритм, который будет "разворачивать" связи
+// в связном списке и вернёт первый элемент этого списка
+
+
+$ari = new Node('Ari');
+$pete = new Node('Pete', $ari);
+$steave = new Node('Steave', $pete);
+$bob = new Node('Bob', $steave);
+
+print_r($bob);
+
+function turnNode($elNode)
+{
+    if (is_object($elNode->next)) {
+        turnNode($elNode->next);
+        $elNode->next->next = $elNode;
+        $elNode->next = null;
+    }
+}
+
+
+turnNode($bob);
+
+print_r($ari);

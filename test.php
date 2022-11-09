@@ -1,44 +1,53 @@
 <?php
 
-// Алгоритм сортировки слиянием
-// Разделяем массив до "базового случая" (массив содержит либо 1 элемент, либо 2)
-// Далее сравниваем и меняем местами, постепенно увеличивая количество элементов в массиве
-// Скорость O(n*log n) - в любом из случаев (при лучшем, среднем и худшем)
+// Поиск в ширину
 
-$list = [1, 5, 6, 2, 53, 20, 9, 291, 214, 21, 204, 24, 54, 94, 2303, 4523, 9288, 12];
+$graph = [
+    'you' => ['alice', 'bob', 'claire'],
+    'bob' => ['anuj', 'peggy'],
+    'alice' => ['peggy'],
+    'claire' => ['thom', 'jonny'],
+    'anuj' => [],
+    'peggy' => [],
+    'thom' => [],
+    'jonny' => [],
+];
 
-function merge_sort($data) {
+function search($graph, $search)
+{
+    $visited = [];
 
-    // Обрабатываем только в том случае, если у нас больше одного элемента в массиве
-    if(count($data) > 1) {
+    // пустая очередь
+    $queue = new SplQueue();
 
-        // Находи середину текущего набора данных, делим его пополам (округляем в сторону меньшего)
-        $data_middle = round(count($data) / 2, 0, PHP_ROUND_HALF_DOWN);
-        // Рекурсия
-        $data_part1 = merge_sort(array_slice($data, 0, $data_middle));
-        $data_part2 = merge_sort(array_slice($data, $data_middle, count($data)));
+    // пометим все узлы как непосещенные
+    foreach ($graph as $vertex=>$neighbor) {
+        $visited[$vertex] = false;
+    }
 
-        // Задаём значения счётчикам, чтобы мы могли помнить, какую часть данных в каждой половине мы смотрим
-        $counter1 = $counter2 = 0;
+    // добавим начальную вершину в очередь и пометим ее как посещенную
+    $queue->enqueue($search);
+    $visited[$search] = true;
 
-        // Перебираем все элементы обрабатываемого массива, чтобы сравнить размер и собрать заново
-        for ($i = 0; $i < count($data); $i++) {
-            // Если мы закончили обработку первой половины, далее берём вторую половину
-            if($counter1 == count($data_part1)) {
-                $data[$i] = $data_part2[$counter2];
-                $counter2++;
-                // Если мы закончили со 2-й половиной или части в первой половине меньше, чем во 2-й половине
-            } elseif (($counter2 == count($data_part2)) or ($data_part1[$counter1] < $data_part2[$counter2])) {
-                $data[$i] = $data_part1[$counter1];
-                $counter1++;
-            } else {
-                $data[$i] = $data_part2[$counter2];
-                $counter2++;
+    // пока очередь не пуста и путь не найден
+    while (!$queue->isEmpty()) {
+        $person = $queue->dequeue(); // в переменную $person присваиваем удалённый из очереди элемент
+
+        if (!empty($graph[$person])) {
+            print_r($graph[$person]);
+            foreach ($graph[$person] as $vertex) {
+                if (!$visited[$vertex]) {
+                    if ($vertex == "jonny") {           // Проверка на продавца
+                        echo "Найден $vertex - продавец\n";
+                        return true;
+                    }
+                    // если все еще не посещен, то добавим в очередь и отметим
+                    $queue->enqueue($vertex);
+                    $visited[$vertex] = true;
+                }
             }
         }
     }
-
-    return $data;
 }
 
-print_r(merge_sort($list));
+search($graph, 'you');

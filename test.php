@@ -1,80 +1,118 @@
 <?php
 
-// Поиск в ширину
+// Алгоритм Дейкстры
 
 $graph = [
-    'you' => ['alice', 'bob', 'claire'],
-    'bob' => ['anuj', 'peggy'],
-    'alice' => ['peggy'],
-    'claire' => ['thom', 'jonny'],
-    'anuj' => [],
-    'peggy' => [],
-    'thom' => [],
-    'jonny' => [],
+    'A' => [
+        'B' => 3,
+        'D' => 3,
+        'F' => 6
+    ],
+    'B' => [
+        'A' => 3,
+        'D' => 1,
+        'E' => 3
+    ],
+    'C' => [
+        'E' => 2,
+        'F' => 3
+    ],
+    'D' => [
+        'A' => 3,
+        'B' => 1,
+        'E' => 1,
+        'F' => 2
+    ],
+    'E' => [
+        'B' => 3,
+        'C' => 2,
+        'D' => 1,
+        'F' => 5
+    ],
+    'F' => [
+        'A' => 6,
+        'C' => 3,
+        'D' => 2,
+        'E' => 5
+    ],
 ];
 
-function search($graph, $search, $destination)
+class Dijkstra
 {
-    $visited = [];
+    protected $graph;
 
-    // пустая очередь
-    $queue = new SplQueue();
-
-    // пометим все узлы как непосещенные
-    foreach ($graph as $vertex=>$neighbor) {
-        $visited[$vertex] = false;
+    public function __construct($graph) {
+        $this->graph = $graph;
     }
 
-    // добавим начальную вершину в очередь и пометим ее как посещенную
-    $queue->enqueue($search);
-    $visited[$search] = true;
+    public function shortestPath($source, $target) {
+        // массив кратчайших путей к каждому узлу
+        $shortedPath = [];
+        // массив "предшественников" для каждого узла
+        $knotParent = [];
+        // очередь всех неоптимизированных узлов
+        $knotQueue = new SplQueue();
 
-    // это требуется для записи обратного пути от каждого узла
-    $path = [];
-    $path[$search] = new SplDoublyLinkedList();
-    $path[$search]->setIteratorMode(
-        SplDoublyLinkedList::IT_MODE_FIFO|SplDoublyLinkedList::IT_MODE_KEEP
-    );
+        foreach ($this->graph as $knot => $value) { // knot - узел ("A", "B", "C"... , "F"), value - массив соседей узла
+            $shortedPath[$knot] = INF; // устанавливаем изначальные расстояния как бесконечность
+            $knotParent[$knot] = null; // никаких узлов позади нет
+            foreach ($value as $neighbor => $cost) { // записываем в очередь всех соседей каждого из узлов ("A", "B", "C"... , "F")
+                $knotQueue->enqueue($neighbor);
+            }
+        }
 
-    $path[$search]->push($search);
+        // начальная дистанция на стартовом узле - 0
+        $shortedPath[$source] = 0;
 
-    // пока очередь не пуста и путь не найден
-    while (!$queue->isEmpty() && $queue->bottom() != $destination) {
-        $person = $queue->dequeue(); // в переменную $person присваиваем удалённый из очереди элемент
+        while (!$knotQueue->isEmpty()) { // Пока есть очередь из узлов
+            // извлечем минимальную цену
+            $nearest_neighbor = $knotQueue->dequeue();
+            if (!empty($this->graph[$nearest_neighbor])) {
+                // пройдемся по всем соседним узлам
+                foreach ($this->graph[$nearest_neighbor] as $neighbor => $cost) {
+                    // установим новую длину пути для соседнего узла
+                    $alt = $shortedPath[$nearest_neighbor] + $cost;
 
-        if (!empty($graph[$person])) {
-            foreach ($graph[$person] as $vertex) {
-                if (!$visited[$vertex]) {
-                    if ($vertex == $destination) {           // Проверка на продавца
-                        echo "Найден $vertex - продавец\n";
+                    // если он оказался короче
+                    if ($alt < $shortedPath[$neighbor]) {
+                        $shortedPath[$neighbor] = $alt; // установим как минимальное расстояние до этого узла
+                        $knotParent[$neighbor] = $nearest_neighbor;  // добавим соседа как предшествующий этому узел
                     }
-                    // если все еще не посещен, то добавим в очередь и отметим
-                    $queue->enqueue($vertex);
-                    $visited[$vertex] = true;
-
-                    // добавим узел к текущему пути
-                    $path[$vertex] = clone $path[$person];
-                    $path[$vertex]->push($vertex);
                 }
             }
         }
-    }
 
-    if (isset($path[$destination])) {
-        echo "из $search в $destination за ",
-            count($path[$destination]) - 1,
-        " прыжков";
-        $sep = '';
-        echo " ";
-        foreach ($path[$destination] as $vertex) {
-            echo $sep, $vertex;
-            $sep = '->';
+        // теперь мы можем найти минимальный путь
+        // используя обратный проход
+        $stack = new SplStack(); // кратчайший путь как стек
+        $finish_target = $target;
+        $distance = 0;
+        // проход от целевого узла до стартового
+        while (isset($knotParent[$finish_target]) && $knotParent[$finish_target]) {
+            $stack->push($finish_target);
+            $distance += $this->graph[$finish_target][$knotParent[$finish_target]]; // добавим дистанцию для предшествующих
+            $finish_target = $knotParent[$finish_target];
         }
-        echo "\n";
-    }
-    else {
-        echo "Нет пути из $search в $destination \n";
+
+        // стек будет пустой, если нет пути назад
+        if ($stack->isEmpty()) {
+            echo "Нет пути из $source в $target \n";
+        }
+        else {
+            // добавим стартовый узел и покажем весь путь
+            // в обратном (LIFO) порядке
+            $stack->push($source);
+            echo "$distance:";
+            $sep = '';
+            foreach ($stack as $v) {
+                echo $sep, $v;
+                $sep = '->';
+            }
+            echo "n";
+        }
     }
 }
 
-search($graph, "you", "thom");
+$g = new Dijkstra($graph);
+
+$g->shortestPath('D', 'C');

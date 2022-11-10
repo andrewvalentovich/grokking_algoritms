@@ -13,7 +13,7 @@ $graph = [
     'jonny' => [],
 ];
 
-function search($graph, $search)
+function search($graph, $search, $destination)
 {
     $visited = [];
 
@@ -29,25 +29,52 @@ function search($graph, $search)
     $queue->enqueue($search);
     $visited[$search] = true;
 
+    // это требуется для записи обратного пути от каждого узла
+    $path = [];
+    $path[$search] = new SplDoublyLinkedList();
+    $path[$search]->setIteratorMode(
+        SplDoublyLinkedList::IT_MODE_FIFO|SplDoublyLinkedList::IT_MODE_KEEP
+    );
+
+    $path[$search]->push($search);
+
     // пока очередь не пуста и путь не найден
-    while (!$queue->isEmpty()) {
+    while (!$queue->isEmpty() && $queue->bottom() != $destination) {
         $person = $queue->dequeue(); // в переменную $person присваиваем удалённый из очереди элемент
 
         if (!empty($graph[$person])) {
-            print_r($graph[$person]);
             foreach ($graph[$person] as $vertex) {
                 if (!$visited[$vertex]) {
-                    if ($vertex == "jonny") {           // Проверка на продавца
+                    if ($vertex == $destination) {           // Проверка на продавца
                         echo "Найден $vertex - продавец\n";
-                        return true;
                     }
                     // если все еще не посещен, то добавим в очередь и отметим
                     $queue->enqueue($vertex);
                     $visited[$vertex] = true;
+
+                    // добавим узел к текущему пути
+                    $path[$vertex] = clone $path[$person];
+                    $path[$vertex]->push($vertex);
                 }
             }
         }
     }
+
+    if (isset($path[$destination])) {
+        echo "из $search в $destination за ",
+            count($path[$destination]) - 1,
+        " прыжков";
+        $sep = '';
+        echo " ";
+        foreach ($path[$destination] as $vertex) {
+            echo $sep, $vertex;
+            $sep = '->';
+        }
+        echo "\n";
+    }
+    else {
+        echo "Нет пути из $search в $destination \n";
+    }
 }
 
-search($graph, 'you');
+search($graph, "you", "thom");
